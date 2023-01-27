@@ -42,7 +42,7 @@ app.use('/user', userRouter)
 
 
 app.get('/', (req, res) => {
-    res.status(200).send("hello")
+    res.status(200).send("server is live")
 })
 const Port = process.env.PORT
 dbconnect()
