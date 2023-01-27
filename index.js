@@ -9,7 +9,7 @@ const cookie = require('cookie-parser')
 const cors = require("cors")
 const cloudinary = require("cloudinary").v2;
 
-dotenv.config('./server\.env') 
+dotenv.config('./server\.env')
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -26,13 +26,13 @@ app.use(cookie())
 
 let origin = "http://localhost:3000";
 console.log("here env", process.env.NODE_ENV);
-if(process.env.NODE_ENV === 'production'){
+if (process.env.NODE_ENV === 'production') {
     origin = process.env.CLIENT_ORIGIN
 }
 
 app.use(cors({
     credentials: true,
-    origin: 'http://localhost:3000'
+    origin
 }))
 
 
