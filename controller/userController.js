@@ -1,7 +1,6 @@
-
-// const { json } = require("express");
 const Post = require("../models/Post");
 const User = require("../models/User");
+const Comment = require("../models/Comment");
 const { error, success } = require("../utils/responseWrapper");
 const cloudinary = require("cloudinary").v2;
 const { mapPostOutput } = require("../utils/Utils")
@@ -16,187 +15,194 @@ const followOrUnfollowUserController = async (req, res) => {
         const curUser = await User.findById(curUserId);
 
         if (curUserId === userIdToFollow) {
-            return res.send(error(400, "User cannot follow themselves"));
+            return res.send(error(409, "Users cannot follow themselves!"));
         }
+
         if (!userToFollow) {
-            return res.send(error(400, "User to follow not found"));
+            return res.send(error(404, "User to follow not found"));
         }
+
         if (curUser.followings.includes(userIdToFollow)) {
-            // already followed
             const followingIndex = curUser.followings.indexOf(userIdToFollow);
             curUser.followings.splice(followingIndex, 1);
 
-            const followerIndex = userToFollow.followers.indexOf(curUser);
+            const followerIndex = userToFollow.followers.indexOf(curUserId);
             userToFollow.followers.splice(followerIndex, 1);
-
-            // await userToFollow.save();
-            // await curUser.save();
-
-            // return res.send(success(200, "User Unfollowed"))
         } else {
-            userToFollow.followers.push(curUserId);
-            curUser.followings.push(userIdToFollow);
-
-            // 
-
-            // return res.send(success(200, "User Followed"))
+            userToFollow.followers.push(curUser);
+            curUser.followings.push(userToFollow);
         }
-        await userToFollow.save()
-        await curUser.save()
-        return res.send(success(200,{user: userToFollow}))
 
+        await userToFollow.save();
+        await curUser.save();
 
-    } catch (e) {
-        console.log(e)
-        return res.send(error(500, e.message))
-
+        return res.send(success(200, { user: userToFollow }));
+    } catch (err) {
+        console.log(err);
+        return res.send(error(500, err.message));
     }
 };
 
-const getPostOfFollowing = async (req, res) => {
+const getPostsOfFollowingController = async (req, res) => {
     try {
+
         const curUserId = req._id;
-        const curUser = await User.findById(curUserId).populate('followings');
+        const curUser = await User.findById(curUserId).populate("followings");
+
+        const followingsIds = curUser.followings.map((item) => item._id);
+        followingsIds.push(req._id);
 
         const fullPosts = await Post.find({
             owner: {
                 $in: curUser.followings,
             },
-        }).populate('owner');
+        }).populate("owner");
 
         const posts = fullPosts
             .map((item) => mapPostOutput(item, req._id))
             .reverse();
 
-        console.log("these are posts", posts)
-        const followingsIds = curUser.followings.map((item) => item._id);
-        followingsIds.push(req._id);//not allowing ourself to follow ourself
-
         const suggestions = await User.find({
             _id: {
                 $nin: followingsIds,
-            }
-        })
-        return res.send(success(200, { ...curUser._doc, suggestions, posts }))
+            },
+        });
 
-    } catch (e) {
-        console.log(e);
-        return res.send(error(500, e.message));
-
+        return res.send(success(200, { ...curUser._doc, suggestions, posts }));
+    } catch (err) {
+        return res.send(error(500, err.message));
     }
 };
 
-const getMyPosts = async (req, res) => {
+const getPostsOfNotFollowingController = async (req, res) => {
     try {
+        console.log("inside cntrr")
         const curUserId = req._id;
-        const allUserPosts = await Post.find({
-            owner: curUserId
-        }).populate("likes");
+        const curUser = await User.findById(curUserId).populate("followings");
 
-        return res.send(success(200, { allUserPosts }))
+        const followingsIds = curUser.followings.map((item) => item._id);
+        followingsIds.push(req._id);
 
-    } catch (e) {
-        console.log(e);
-        return res.send(error(500, e.message));
+        const fullPosts = await Post.find({
+            owner: {
+                $nin: followingsIds,
+            },
+        }).populate("owner");
 
+        const posts = fullPosts
+            .map((item) => mapPostOutput(item, req._id))
+            .reverse();
+        console.log("posts are",posts)
+        return res.send(success(200, { posts }));
+    } catch (err) {
+        console.log("error inside con", err)
+        return res.send(error(500, err.message));
     }
-}
+};
 
-const getUserPosts = async (req, res) => {
-    try {
-        const userId = req.body.userId;
-        if (!userId) {
-            return res.send(error(400, "userId is required"))
-        }
-
-        const allUserPosts = await Post.find({
-            owner: userId
-        }).populate("likes");
-
-        return res.send(success(200, { allUserPosts }))
-    } catch (e) {
-        console.log(e);
-        return res.send(error(500, e.message))
-
-    }
-}
-const deleteMyProfile = async (req, res) => {
+const getMyPostsController = async (req, res) => {
     try {
         const curUserId = req._id;
         const curUser = await User.findById(curUserId);
 
-        // delete all posts
+        const myALLPosts = await Post.find({
+            owner: curUser,
+        }).populate("likes");
+
+        return res.send(success(200, { myALLPosts }));
+    } catch (err) {
+        return res.send(error(500, err.message));
+    }
+};
+
+const getUserPostsController = async (req, res) => {
+    try {
+        const { userId } = req.body;
+
+        if (!userId) {
+            res.send(error(400, "User Id is required"));
+        }
+
+        const user = await User.findById(userId);
+
+        const userPosts = await Post.find({
+            owner: user,
+        }).populate("likes");
+
+        return res.send(success(200, { userPosts }));
+    } catch (err) {
+        return res.send(error(500, err.message));
+    }
+};
+
+const deleteMyProfileController = async (req, res) => {
+    try {
+        const curUserId = req._id;
+        const curUser = await User.findById(curUserId);
+
+        // All posts Deletion
 
         await Post.deleteMany({
-            owner: curUserId
-        })
+            owner: curUser,
+        });
 
-        // remove myself from followers followings]
+        //Removing Myself from follower's followings
 
         curUser.followers.forEach(async (followerId) => {
             const follower = await User.findById(followerId);
-            const index = follower.followings.indexOf(curUserId);
+            const index = follower.followings.indexOf(curUser);
             follower.followings.splice(index, 1);
             await follower.save();
-        })
+        });
 
-        // remove myself from my followings followers
+        //Removing Myself from following's followers
 
         curUser.followings.forEach(async (followingId) => {
             const following = await User.findById(followingId);
-            const index = following.followers.indexOf(curUserId);
+            const index = following.followers.indexOf(curUser);
             following.followers.splice(index, 1);
             await following.save();
-        })
+        });
 
-        // remove myself from all likes;
+        //Removing Myself from all likes
+
         const allPosts = await Post.find();
         allPosts.forEach(async (post) => {
-            const index = post.likes.indexOf(curUserId);
+            const index = await post.likes.indexOf(curUser);
             post.likes.splice(index, 1);
             await post.save();
-        })
+        });
 
-        // delete user
+        // Deletion of all comments of the user
+        await Comment.deleteMany({
+            owner: curUser,
+        });
+
         await curUser.remove();
 
-        res.clearCookie('jwt', {
+        res.clearCookie("jwt", {
             httpOnly: true,
             secure: true,
         });
 
-        return res.send(success(200, "user deleted"))
-
-    } catch (e) {
-        console.log(e)
-        return res.send(500, e.message);
-
+        return res.send(success(200, "User Deleted"));
+    } catch (err) {
+        return res.send(error(500, err.message));
     }
-}
+};
 
-const getMyProfile = async (req, res) => {
+const getMyInfoController = async (req, res) => {
     try {
-        const user = await User.findById(req._id);
+        const user = await User.findById(req._id)
+            .populate("followers")
+            .populate("followings");
         return res.send(success(200, { user }));
-    } catch (e) {
-        return res.send(error(500, e.message));
-
+    } catch (err) {
+        return res.send(error(500, err.message));
     }
+};
 
-}
-
-const getMyInfo = async (req, res) => {
-    try {
-        const user = await User.findById(req._id);
-        return res.send(success(200, { user }));
-
-    } catch (e) {
-        console.log(e)
-        return res.send(error(500, e.message));
-    }
-}
-
-const updateUserProfile = async (req, res) => {
+const updateMyProfileController = async (req, res) => {
     try {
         const { name, bio, userImg } = req.body;
 
@@ -210,46 +216,71 @@ const updateUserProfile = async (req, res) => {
         }
         if (userImg) {
             const cloudImg = await cloudinary.uploader.upload(userImg, {
-                folder: "profileImg"
-            })
+                folder: "profileImage",
+            });
             user.avatar = {
                 url: cloudImg.secure_url,
-                publicId: cloudImg.public_id
-            }
+                publicId: cloudImg.public_id,
+            };
         }
         await user.save();
-        return res.send(success(200, { user }))
-    } catch (e) {
-        return res.send(error(500, e.message));
-
+        return res.send(success(200, { user }));
+    } catch (err) {
+        return res.send(error(500, err.message));
     }
-}
+};
 
-const getUserProfile = async (req, res) => {
+const getUserProfileController = async (req, res) => {
     try {
-        const userId = req.body.userId;
-        const user = await User.findById(userId).populate({
-            path: "posts",
-            populate: {
-                path: "owner"
-            }
-        })
+        const { userId } = req.body;
+        const user = await User.findById(userId)
+            .populate({
+                path: "posts",
+                populate: {
+                    path: "owner",
+                },
+            })
+            .populate("followers")
+            .populate("followings");
+
         const fullPosts = user.posts;
-        const posts = fullPosts.map(item => mapPostOutput(item, req._id)).reverse();
+        const posts = fullPosts
+            .map((item) => mapPostOutput(item, req._id))
+            .reverse();
 
         return res.send(success(200, { ...user._doc, posts }));
-    } catch (e) {
-        return res.send(error(500, e.message))
-
+    } catch (err) {
+        return res.send(error(500, err.message));
     }
-}
+};
+
+const searchUserController = async (req, res) => {
+    try {
+        const { searchQuery } = req.body;
+
+        if (!searchQuery) {
+            res.send(error(400, "Search query is required"));
+        }
+
+        const user = await User.find({
+            $or: [{ name: { $regex: searchQuery, $options: "i" } }],
+        });
+
+        return res.send(success(200, { user }));
+    } catch (err) {
+        return res.send(error(500, err.message));
+    }
+};
+
 module.exports = {
     followOrUnfollowUserController,
-    getPostOfFollowing,
-    getMyPosts,
-    getUserPosts,
-    deleteMyProfile,
-    getMyInfo,
-    updateUserProfile,
-    getUserProfile
-}
+    getPostsOfFollowingController,
+    getPostsOfNotFollowingController,
+    getMyPostsController,
+    getUserPostsController,
+    deleteMyProfileController,
+    getMyInfoController,
+    updateMyProfileController,
+    getUserProfileController,
+    searchUserController,
+};

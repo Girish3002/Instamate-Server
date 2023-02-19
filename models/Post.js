@@ -14,14 +14,24 @@ const postSchema = mongoose.Schema({
         type: String,
         required: true
     },
+    isVideo: {
+        type: Boolean,
+    },
     likes: [
         {
             type: mongoose.Schema.Types.ObjectId,
             ref: "user"
         }
-    ]
-},{
-    timestamps : true
+    ],
+    comments: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "comment",
+        },
+    ],
+
+}, {
+    timestamps: true
 })
 
 module.exports = mongoose.model("post", postSchema);

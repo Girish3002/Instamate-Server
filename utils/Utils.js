@@ -10,6 +10,7 @@ const mapPostOutput = (post, userId) => {
             name: post.owner.name,
             avatar: post.owner.avatar
         },
+        isVideo: post.isVideo,
         likesCount: post.likes.length,
         isLiked: post.likes.includes(userId),
         timeAgo: ta.ago(post.createdAt)

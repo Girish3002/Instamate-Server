@@ -1,15 +1,29 @@
-const { followOrUnfollowUserController, getPostOfFollowing, getMyPosts, getUserPosts, deleteMyProfile, getMyInfo, updateUserProfile, getUserProfile } = require("../controller/userController");
-const requireUser = require('../middlewares/requireUser')
+const requireUser = require("../middlewares/requireUser");
+const UserController = require("../controller/userController");
 const router = require("express").Router();
 
-router.post('/follow', requireUser, followOrUnfollowUserController);
-router.get('/getFeedData', requireUser, getPostOfFollowing);
-router.get('/getMyPosts', requireUser, getMyPosts);
-router.get('/getUserPosts', requireUser, getUserPosts);
-router.delete('/', requireUser, deleteMyProfile);
-router.get('/getMyInfo', requireUser, getMyInfo);
+const {
+    followOrUnfollowUserController,
+    getPostsOfFollowingController,
+    getMyPostsController,
+    getUserPostsController,
+    deleteMyProfileController,
+    getMyInfoController,
+    updateMyProfileController,
+    getUserProfileController,
+    searchUserController,
+    getPostsOfNotFollowingController,
+} = UserController;
 
-router.put('/', requireUser, updateUserProfile);
-router.post('/getUserProfile', requireUser, getUserProfile);
+router.post("/follow", requireUser, followOrUnfollowUserController);
+router.get("/getFeedData", requireUser, getPostsOfFollowingController);
+router.get("/getExploreData", requireUser, getPostsOfNotFollowingController);
+router.get("/getMyPosts", requireUser, getMyPostsController);
+router.get("/getUserPosts", requireUser, getUserPostsController);
+router.delete("/deleteMyProfile", requireUser, deleteMyProfileController);
+router.get("/getMyInfo", requireUser, getMyInfoController);
+router.put("/", requireUser, updateMyProfileController);
+router.post("/getUserProfile", requireUser, getUserProfileController);
+router.post("/searchUser", requireUser, searchUserController);
 
 module.exports = router;

@@ -3,6 +3,7 @@ const dotenv = require('dotenv')
 const authRouter = require('./routers/authRouter')
 const postsRouter = require('./routers/postsRouter')
 const userRouter = require('./routers/userRouter')
+const commentRouter = require('./routers/commentRouter')
 const dbconnect = require('./dbConnect')
 const morgan = require("morgan")
 const cookie = require('cookie-parser')
@@ -20,7 +21,7 @@ cloudinary.config({
 const app = express();
 
 // middlewares
-app.use(express.json({ limit: "10mb" }))
+app.use(express.json({ limit: "100mb" }))
 app.use(morgan("common"))
 app.use(cookie())
 
@@ -37,8 +38,9 @@ app.use(cors({
 
 
 app.use('/auth', authRouter)
-app.use('/posts', postsRouter)
+app.use('/post', postsRouter)
 app.use('/user', userRouter)
+app.use("/comment", commentRouter);
 
 
 app.get('/', (req, res) => {
