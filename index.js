@@ -34,14 +34,12 @@ console.log("here origin is", origin)
 app.use(cors({
     credentials: true,
     origin
-}))
-
+}))     
 
 app.use('/auth', authRouter)
 app.use('/post', postsRouter)
 app.use('/user', userRouter)
 app.use("/comment", commentRouter);
-
 
 app.get('/', (req, res) => {
     res.status(200).send("server is live")
