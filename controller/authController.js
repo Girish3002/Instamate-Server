@@ -10,13 +10,11 @@ const signUpController = async (req, res) => {
         const { name, email, password } = req.body
 
         if (!email || !password || !name) {
-            // return res.status(400).send("All fields are required")
             return res.send(error(400, "All fields are required"))
         }
 
         const oldUser = await User.findOne({ email })
         if (oldUser) {
-            // return res.status(409).send("User is already registered")
             return res.send(error(409, "User is already registered"))
         }
 
@@ -27,9 +25,6 @@ const signUpController = async (req, res) => {
             email,
             password: hashedPassword
         })
-        // return res.status(201).json({
-        //     user
-        // })
         return res.send(success(201, "user created successfully"))
 
     } catch (e) {
@@ -44,7 +39,6 @@ const loginController = async (req, res) => {
         const { email, password } = req.body
 
         if (!email || !password) {
-            // return res.status(400).send("All fields are required")
             return res.send(error(400, "All fields are required"))
 
 
@@ -52,14 +46,12 @@ const loginController = async (req, res) => {
 
         const user = await User.findOne({ email }).select('+password')
         if (!user) {
-            // return res.status(404).send("User is not regisered")
             return res.send(error(404, "User is not regisered"))
 
         }
 
         const matched = await bcrypt.compare(password, user.password)
         if (!matched) {
-            // return res.status(403).send("Incorrect password")
             return res.send(error(403, "Incorrect password"))
         }
 
@@ -114,7 +106,6 @@ const refreshAcessTokenController = async (req, res) => {
         const _id = decoded._id
 
         const acessToken = generateAcessToken({ _id })
-        // return res.status(201).json({ acessToken })
         return res.send(success(201, { acessToken }))
 
 
@@ -122,7 +113,6 @@ const refreshAcessTokenController = async (req, res) => {
 
     catch (e) {
         console.log(e)
-        // return res.status(401).send("Invalid Refresh Token")
         return res.send(error(401, "Invalid Refresh Token"))
 
 
