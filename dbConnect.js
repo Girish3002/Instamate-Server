@@ -13,7 +13,7 @@ module.exports = async () => {
     }
 
     catch (e) {
-        console.log(e);
+        console.log("this is error sfdljsdlfjsdl", e);
         process.exit(1)
 
     }

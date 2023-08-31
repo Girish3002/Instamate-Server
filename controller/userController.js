@@ -92,7 +92,7 @@ const getPostsOfNotFollowingController = async (req, res) => {
         const posts = fullPosts
             .map((item) => mapPostOutput(item, req._id))
             .reverse();
-        console.log("posts are",posts)
+        console.log("posts are", posts)
         return res.send(success(200, { posts }));
     } catch (err) {
         console.log("error inside con", err)
@@ -260,6 +260,7 @@ const searchUserController = async (req, res) => {
 
         if (!searchQuery) {
             res.send(error(400, "Search query is required"));
+          return;
         }
 
         const user = await User.find({

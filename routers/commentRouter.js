@@ -1,10 +1,10 @@
 const router = require("express").Router();
 const requireUser = require("../middlewares/requireUser");
 const commentController = require("../controller/commentController");
-
-const {
-    createCommentController,
-    deleteCommentController,
+  
+const {         
+    createCommentController,  
+    deleteCommentController,   
     getCommentsController,
 } = commentController;
 
